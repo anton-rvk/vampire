@@ -1,0 +1,650 @@
+<html>
+ <body style="background-color:#222222;">
+   <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+			#mycard {
+ 				background-color: #222222;
+			
+  border: 1px solid #222222;
+}
+ #loadingBar { display: none !important;}
+
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #222222;
+                 border: 1px solid #222222;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 800px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div id="mycard" class="card" style="width: 100%">
+            
+            
+              <div id="filter-menu" class="card-header">
+                <div class="row no-gutters">
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'item')"
+                            id="select-item"
+                        >
+                        <option value="">Select a network item</option>
+                        <option value="edge">edge</option>
+                        <option value="node">node</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'property')"
+                            id="select-property"
+                        >
+                        <option value="">Select a property...</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            id="select-value"
+                        >
+                        <option value="">Select value(s)...</option>
+                    </select>
+                  </div>
+                  <div class="col-1 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="highlightFilter(filter);">Filter</button>
+                  </div>
+                  <div class="col-2 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="clearFilter(true)">Reset Selection</button>
+                  </div>
+                </div>
+              </div>
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+                  // explicitly using onItemAdd and this function as we need to save multiple values
+                  let updateValueFilter = function() {
+                      return function () {
+                      filter['value'].push(arguments[0])
+                      }
+                  }
+
+                  let valueControl = new TomSelect("#select-value",{
+                      maxItems: null,
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: updateValueFilter()
+                  });
+
+                  let addValues = function() {
+                      return function () {
+                          // clear the current value options and add the selected attribute values
+                          // tom-select handles duplicates
+                          let selectedProperty = arguments[0];
+                          valueControl.clear();
+                          valueControl.clearOptions();
+                          filter['value'] = []
+                          if (filter['item'] === 'node') {
+                              for (let each in allNodes) {
+                                  valueControl.addOption({
+                                      id:allNodes[each][selectedProperty],
+                                      title:allNodes[each][selectedProperty]
+                                  })
+                              }
+                          }
+                          else if (filter['item'] === 'edge') {
+                              for (let each in allEdges) {
+                                  valueControl.addOption({
+                                      id:allEdges[each][selectedProperty],
+                                      title:allEdges[each][selectedProperty]
+                                  })
+                              }
+                          }
+                      }
+                  };
+
+                  let propControl = new TomSelect("#select-property",{
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addValues()
+                  });
+
+                  let addProperties = function() {
+                      return function () {
+                          // loops through the selected network item and adds the attributes to dropdown
+                          // tom-select handles duplicates
+                          clearFilter(false)
+                          if (arguments[0] === 'edge') {
+                              for (let each in allEdges) {
+                                  if (allEdges.hasOwnProperty(each)) {
+                                      for (let eachProp in allEdges[each]) {
+                                          if (allEdges[each].hasOwnProperty(eachProp)) {
+                                              if (['Generation', 'Name', 'Sire_Of', 'Childer_Of'].includes(eachProp)){
+propControl.addOption({id: eachProp, title: eachProp})
+}
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          else if (arguments[0] === 'node') {
+                              for (let each in allNodes) {
+                                  if (allNodes.hasOwnProperty(each)) {
+                                      for (let eachProp in allNodes[each]) {
+                                          if (allNodes[each].hasOwnProperty(eachProp)
+                                              && (eachProp !== 'hidden' && eachProp !== 'savedLabel'
+                                                  && eachProp !== 'hiddenLabel')) {
+                                              if (['Generation', 'Name', 'Sire_Of', 'Childer_Of'].includes(eachProp)){
+propControl.addOption({id: eachProp, title: eachProp})
+}
+
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  };
+
+                  let itemControl = new TomSelect("#select-item",{
+                      create: false,
+                      sortField:{
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addProperties()
+                  });
+
+                  function clearFilter(reset) {
+                      // utility function to clear all the selected filter options
+                      // if reset is set to true, the existing filter will be removed
+                      // else, only the dropdown options are cleared
+                      propControl.clear();
+                      propControl.clearOptions();
+                      valueControl.clear();
+                      valueControl.clearOptions();
+                      filter = {
+                          item : '',
+                          property : '',
+                          value : []
+                      }
+                      if (reset) {
+                          itemControl.clear();
+                          filterHighlight({nodes: []})
+                      }
+                  }
+
+                  function updateFilter(value, key) {
+                      // key could be 'item' or 'property' and value is as selected in dropdown
+                      filter[key] = value
+                  }
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"Generation": 9.0, "Name": "Julius Abrogard", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Julius Abrogard", "label": "Julius Abrogard\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Julius_Abrogard"}, {"Generation": 10.0, "Name": "Marshall Bilton", "color": "#ff52aa", "font": {"color": "white"}, "id": "Marshall Bilton", "label": "Marshall Bilton\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Marshall_Bilton"}, {"Generation": 10.0, "Name": "Dawn Nakada", "color": "#ff52aa", "font": {"color": "white"}, "id": "Dawn Nakada", "label": "Dawn Nakada\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dawn_Nakada"}, {"Generation": 9.0, "Name": "Carter Vanderweyden", "color": {"background": "black", "border": "#ff3d9f"}, "font": {"color": "white"}, "id": "Carter Vanderweyden", "label": "Carter Vanderweyden\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Carter_Vanderweyden"}, {"Generation": 8.0, "Name": "Hassan abu Khalid", "color": "#ff2994", "font": {"color": "white"}, "id": "Hassan abu Khalid", "label": "Hassan abu Khalid\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Hassan_abu_Khalid"}, {"Generation": 8.0, "Name": "Al-Hakim", "color": {"background": "black", "border": "#ff2994"}, "font": {"color": "white"}, "id": "Al-Hakim", "label": "Al-Hakim\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Al-Hakim"}, {"Generation": 6.0, "Name": "Achadramenos", "color": "#ff007e", "font": {"color": "white"}, "id": "Achadramenos", "label": "Achadramenos\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Achadramenos"}, {"Generation": 6.0, "Name": "Aleister Crowley", "color": {"background": "black", "border": "#ff007e"}, "font": {"color": "white"}, "id": "Aleister Crowley", "label": "Aleister Crowley\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aleister_Crowley"}, {"Generation": 5.0, "Name": "Addemar", "color": "#dd077f", "font": {"color": "white"}, "id": "Addemar", "label": "Addemar\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Addemar"}, {"Generation": 6.0, "Name": "Trimeggian", "color": "#ff007e", "font": {"color": "white"}, "id": "Trimeggian", "label": "Trimeggian\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Trimeggian"}, {"Generation": 5.0, "Name": "Alabaster", "color": "#dd077f", "font": {"color": "white"}, "id": "Alabaster", "label": "Alabaster\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alabaster"}, {"Generation": 6.0, "Name": "Bedelia", "color": "#ff007e", "font": {"color": "white"}, "id": "Bedelia", "label": "Bedelia\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Bedelia"}, {"Generation": 4.0, "Name": "Anuitu", "color": "#bb0e80", "font": {"color": "white"}, "id": "Anuitu", "label": "Anuitu\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Anuitu"}, {"Generation": 5.0, "Name": "Inanna (Malkavian)", "color": "#dd077f", "font": {"color": "white"}, "id": "Inanna (Malkavian)", "label": "Inanna (Malkavian)\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Inanna_(Malkavian)"}, {"Generation": 4.0, "Name": "Abd ar-Rahman", "color": "#bb0e80", "font": {"color": "white"}, "id": "Abd ar-Rahman", "label": "Abd ar-Rahman\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Abd_ar-Rahman"}, {"Generation": 5.0, "Name": "Jacob (Malkavian)", "color": {"background": "black", "border": "#dd077f"}, "font": {"color": "white"}, "id": "Jacob (Malkavian)", "label": "Jacob (Malkavian)\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jacob_(Malkavian)"}, {"Generation": 7.0, "Name": "J. Benison Hodge", "color": "#ff1489", "font": {"color": "white"}, "id": "J. Benison Hodge", "label": "J. Benison Hodge\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/J._Benison_Hodge"}, {"Generation": 7.0, "Name": "Alexander Silverson", "color": "#ff1489", "font": {"color": "white"}, "id": "Alexander Silverson", "label": "Alexander Silverson\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alexander_Silverson"}, {"Generation": 6.0, "Name": "William Biltmore", "color": "#ff007e", "font": {"color": "white"}, "id": "William Biltmore", "label": "William Biltmore\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/William_Biltmore"}, {"Generation": 10.0, "Name": "Richard Dunham", "color": "#ff52aa", "font": {"color": "white"}, "id": "Richard Dunham", "label": "Richard Dunham\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Richard_Dunham"}, {"Generation": 11.0, "Name": "John Hanneman", "color": "#ff66b6", "font": {"color": "white"}, "id": "John Hanneman", "label": "John Hanneman\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/John_Hanneman"}, {"Generation": 9.0, "Name": "Licero Blanco", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Licero Blanco", "label": "Licero Blanco\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Licero_Blanco"}, {"Generation": 10.0, "Name": "Fabrizia Conteraz", "color": "#ff52aa", "font": {"color": "white"}, "id": "Fabrizia Conteraz", "label": "Fabrizia Conteraz\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Fabrizia_Conteraz"}, {"Generation": 10.0, "Name": "Alexa Santos", "color": "#ff52aa", "font": {"color": "white"}, "id": "Alexa Santos", "label": "Alexa Santos\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alexa_Santos"}, {"Generation": 4.0, "Name": "Brahina", "color": "#bb0e80", "font": {"color": "white"}, "id": "Brahina", "label": "Brahina\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Brahina"}, {"Generation": 5.0, "Name": "Unmada", "color": "#dd077f", "font": {"color": "white"}, "id": "Unmada", "label": "Unmada\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Unmada"}, {"Generation": 8.0, "Name": "Bronwyn", "color": "#ff2994", "font": {"color": "white"}, "id": "Bronwyn", "label": "Bronwyn\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Bronwyn"}, {"Generation": 9.0, "Name": "Corbin McDonough", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Corbin McDonough", "label": "Corbin McDonough\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Corbin_McDonough"}, {"Generation": 7.0, "Name": "Bryan (Malkavian)", "color": "#ff1489", "font": {"color": "white"}, "id": "Bryan (Malkavian)", "label": "Bryan (Malkavian)\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Bryan_(Malkavian)"}, {"Generation": 10.0, "Name": "Jasper Creed", "color": "#ff52aa", "font": {"color": "white"}, "id": "Jasper Creed", "label": "Jasper Creed\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jasper_Creed"}, {"Generation": 11.0, "Name": "Stephen Norton", "color": "#ff66b6", "font": {"color": "white"}, "id": "Stephen Norton", "label": "Stephen Norton\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Stephen_Norton"}, {"Generation": 7.0, "Name": "Henry Jekyll/Edward Hyde", "color": "#ff1489", "font": {"color": "white"}, "id": "Henry Jekyll/Edward Hyde", "label": "Henry Jekyll/Edward Hyde\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Henry_Jekyll/Edward_Hyde"}, {"Generation": 4.0, "Name": "Cybele", "color": "#bb0e80", "font": {"color": "white"}, "id": "Cybele", "label": "Cybele\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Cybele"}, {"Generation": 5.0, "Name": "Petaniqua", "color": "#dd077f", "font": {"color": "white"}, "id": "Petaniqua", "label": "Petaniqua\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Petaniqua"}, {"Generation": 5.0, "Name": "Demtius", "color": "#dd077f", "font": {"color": "white"}, "id": "Demtius", "label": "Demtius\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Demtius"}, {"Generation": 6.0, "Name": "Gregorius Dimities", "color": "#ff007e", "font": {"color": "white"}, "id": "Gregorius Dimities", "label": "Gregorius Dimities\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Gregorius_Dimities"}, {"Generation": 4.0, "Name": "Dimitri", "color": {"background": "black", "border": "#bb0e80"}, "font": {"color": "white"}, "id": "Dimitri", "label": "Dimitri\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dimitri"}, {"Generation": 9.0, "Name": "Killikillarven", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Killikillarven", "label": "Killikillarven\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Killikillarven"}, {"Generation": 12.0, "Name": "Dirty Ben", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Dirty Ben", "label": "Dirty Ben\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dirty_Ben"}, {"Generation": 13.0, "Name": "Cassandra Langely", "color": "#ff8fcc", "font": {"color": "white"}, "id": "Cassandra Langely", "label": "Cassandra Langely\n13 gen", "level": 13.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Cassandra_Langely"}, {"Generation": 6.0, "Name": "Dositheus", "color": "#ff007e", "font": {"color": "white"}, "id": "Dositheus", "label": "Dositheus\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dositheus"}, {"Generation": 6.0, "Name": "Abraham Mellon", "color": {"background": "black", "border": "#ff007e"}, "font": {"color": "white"}, "id": "Abraham Mellon", "label": "Abraham Mellon\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Abraham_Mellon"}, {"Generation": 11.0, "Name": "Halsey", "color": "#ff66b6", "font": {"color": "white"}, "id": "Halsey", "label": "Halsey\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Halsey"}, {"Generation": 8.0, "Name": "Gregory of Gloucester", "color": "#ff2994", "font": {"color": "white"}, "id": "Gregory of Gloucester", "label": "Gregory of Gloucester\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Gregory_of_Gloucester"}, {"Generation": 9.0, "Name": "Juliet Parr", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Juliet Parr", "label": "Juliet Parr\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Juliet_Parr"}, {"Generation": 12.0, "Name": "Leysha", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Leysha", "label": "Leysha\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Leysha"}, {"Generation": 8.0, "Name": "Harry Hirsch", "color": "#ff2994", "font": {"color": "white"}, "id": "Harry Hirsch", "label": "Harry Hirsch\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Harry_Hirsch"}, {"Generation": 9.0, "Name": "Scott Levin", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Scott Levin", "label": "Scott Levin\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Scott_Levin"}, {"Generation": 10.0, "Name": "Irmingarda", "color": "#ff52aa", "font": {"color": "white"}, "id": "Irmingarda", "label": "Irmingarda\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Irmingarda"}, {"Generation": 11.0, "Name": "Wiftet", "color": "#ff66b6", "font": {"color": "white"}, "id": "Wiftet", "label": "Wiftet\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Wiftet"}, {"Generation": 8.0, "Name": "Ismene", "color": {"background": "black", "border": "#ff2994"}, "font": {"color": "white"}, "id": "Ismene", "label": "Ismene\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ismene"}, {"Generation": 8.0, "Name": "Sennacherib", "color": "#ff2994", "font": {"color": "white"}, "id": "Sennacherib", "label": "Sennacherib\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Sennacherib"}, {"Generation": 7.0, "Name": "Jason (Malkavian)", "color": "#ff1489", "font": {"color": "white"}, "id": "Jason (Malkavian)", "label": "Jason (Malkavian)\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jason_(Malkavian)"}, {"Generation": 6.0, "Name": "Jeanette Voerman", "color": "#ff007e", "font": {"color": "white"}, "id": "Jeanette Voerman", "label": "Jeanette Voerman\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jeanette_Voerman"}, {"Generation": 6.0, "Name": "Therese Voerman", "color": "#ff007e", "font": {"color": "white"}, "id": "Therese Voerman", "label": "Therese Voerman\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Therese_Voerman"}, {"Generation": 7.0, "Name": "J. Oswald Hyde-White", "color": {"background": "black", "border": "#ff1489"}, "font": {"color": "white"}, "id": "J. Oswald Hyde-White", "label": "J. Oswald Hyde-White\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/J._Oswald_Hyde-White"}, {"Generation": 9.0, "Name": "Evan Klein", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Evan Klein", "label": "Evan Klein\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Evan_Klein"}, {"Generation": 10.0, "Name": "Patricia Montgomery", "color": "#ff52aa", "font": {"color": "white"}, "id": "Patricia Montgomery", "label": "Patricia Montgomery\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Patricia_Montgomery"}, {"Generation": 4.0, "Name": "Lamdiel", "color": "#bb0e80", "font": {"color": "white"}, "id": "Lamdiel", "label": "Lamdiel\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lamdiel"}, {"Generation": 6.0, "Name": "Lasker", "color": "#ff007e", "font": {"color": "white"}, "id": "Lasker", "label": "Lasker\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lasker"}, {"Generation": 7.0, "Name": "Maureen O\u0027Leary", "color": "#ff1489", "font": {"color": "white"}, "id": "Maureen O\u0027Leary", "label": "Maureen O\u0027Leary\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Maureen_O%27Leary"}, {"Generation": 5.0, "Name": "Antoine Le Fanu", "color": "#dd077f", "font": {"color": "white"}, "id": "Antoine Le Fanu", "label": "Antoine Le Fanu\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Antoine_Le_Fanu"}, {"Generation": 6.0, "Name": "Iago", "color": "#ff007e", "font": {"color": "white"}, "id": "Iago", "label": "Iago\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Iago"}, {"Generation": 4.0, "Name": "Lerterimas", "color": "#bb0e80", "font": {"color": "white"}, "id": "Lerterimas", "label": "Lerterimas\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lerterimas"}, {"Generation": 5.0, "Name": "Louhi", "color": "#dd077f", "font": {"color": "white"}, "id": "Louhi", "label": "Louhi\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Louhi"}, {"Generation": 10.0, "Name": "Cassie", "color": "#ff52aa", "font": {"color": "white"}, "id": "Cassie", "label": "Cassie\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Cassie"}, {"Generation": 3.0, "Name": "Malkavian Antediluvian", "color": "#981580", "font": {"color": "white"}, "id": "Malkavian Antediluvian", "label": "Malkavian Antediluvian\n3 gen", "level": 3.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Malkavian_Antediluvian"}, {"Generation": 4.0, "Name": "Eater", "color": "#bb0e80", "font": {"color": "white"}, "id": "Eater", "label": "Eater\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Eater"}, {"Generation": 4.0, "Name": "Nissiku", "color": "#bb0e80", "font": {"color": "white"}, "id": "Nissiku", "label": "Nissiku\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Nissiku"}, {"Generation": 4.0, "Name": "Panehesy", "color": "#bb0e80", "font": {"color": "white"}, "id": "Panehesy", "label": "Panehesy\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Panehesy"}, {"Generation": 4.0, "Name": "Plague-Bride", "color": "#bb0e80", "font": {"color": "white"}, "id": "Plague-Bride", "label": "Plague-Bride\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Plague-Bride"}, {"Generation": 6.0, "Name": "Marcus (Malkavian)", "color": "#ff007e", "font": {"color": "white"}, "id": "Marcus (Malkavian)", "label": "Marcus (Malkavian)\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Marcus_(Malkavian)"}, {"Generation": 6.0, "Name": "Octavio", "color": {"background": "black", "border": "#ff007e"}, "font": {"color": "white"}, "id": "Octavio", "label": "Octavio\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Octavio"}, {"Generation": 8.0, "Name": "Florence Marston", "color": "#ff2994", "font": {"color": "white"}, "id": "Florence Marston", "label": "Florence Marston\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Florence_Marston"}, {"Generation": 9.0, "Name": "Darius Shirazi", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Darius Shirazi", "label": "Darius Shirazi\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Darius_Shirazi"}, {"Generation": 9.0, "Name": "Colin McAllister", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Colin McAllister", "label": "Colin McAllister\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Colin_McAllister"}, {"Generation": 10.0, "Name": "Meixiu", "color": "#ff52aa", "font": {"color": "white"}, "id": "Meixiu", "label": "Meixiu\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Meixiu"}, {"Generation": 9.0, "Name": "Loretta Millhaven", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Loretta Millhaven", "label": "Loretta Millhaven\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Loretta_Millhaven"}, {"Generation": 10.0, "Name": "Adelaide Davis", "color": "#ff52aa", "font": {"color": "white"}, "id": "Adelaide Davis", "label": "Adelaide Davis\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Adelaide_Davis"}, {"Generation": 10.0, "Name": "Mon Cheri", "color": "#ff52aa", "font": {"color": "white"}, "id": "Mon Cheri", "label": "Mon Cheri\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Mon_Cheri"}, {"Generation": 11.0, "Name": "Milo (Malkavian)", "color": "#ff66b6", "font": {"color": "white"}, "id": "Milo (Malkavian)", "label": "Milo (Malkavian)\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Milo_(Malkavian)"}, {"Generation": 8.0, "Name": "Morel", "color": "#ff2994", "font": {"color": "white"}, "id": "Morel", "label": "Morel\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Morel"}, {"Generation": 9.0, "Name": "Antoine the Lost", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Antoine the Lost", "label": "Antoine the Lost\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Antoine_the_Lost"}, {"Generation": 6.0, "Name": "Myriam", "color": "#ff007e", "font": {"color": "white"}, "id": "Myriam", "label": "Myriam\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Myriam"}, {"Generation": 7.0, "Name": "Bosch", "color": "#ff1489", "font": {"color": "white"}, "id": "Bosch", "label": "Bosch\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Bosch"}, {"Generation": 7.0, "Name": "Douglas Netchurch", "color": "#ff1489", "font": {"color": "white"}, "id": "Douglas Netchurch", "label": "Douglas Netchurch\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Douglas_Netchurch"}, {"Generation": 8.0, "Name": "Nancy Reage", "color": "#ff2994", "font": {"color": "white"}, "id": "Nancy Reage", "label": "Nancy Reage\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Nancy_Reage"}, {"Generation": 8.0, "Name": "Jason Newberry", "color": "#ff2994", "font": {"color": "white"}, "id": "Jason Newberry", "label": "Jason Newberry\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jason_Newberry"}, {"Generation": 12.0, "Name": "Jeffrey Granger", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Jeffrey Granger", "label": "Jeffrey Granger\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jeffrey_Granger"}, {"Generation": 8.0, "Name": "Ben Smith", "color": "#ff2994", "font": {"color": "white"}, "id": "Ben Smith", "label": "Ben Smith\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ben_Smith"}, {"Generation": 8.0, "Name": "Paula Smith", "color": "#ff2994", "font": {"color": "white"}, "id": "Paula Smith", "label": "Paula Smith\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Paula_Smith"}, {"Generation": 5.0, "Name": "Pashedu of Thebes", "color": "#dd077f", "font": {"color": "white"}, "id": "Pashedu of Thebes", "label": "Pashedu of Thebes\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Pashedu_of_Thebes"}, {"Generation": 10.0, "Name": "Letitia Shy", "color": "#ff52aa", "font": {"color": "white"}, "id": "Letitia Shy", "label": "Letitia Shy\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Letitia_Shy"}, {"Generation": 6.0, "Name": "Demetrius", "color": "#ff007e", "font": {"color": "white"}, "id": "Demetrius", "label": "Demetrius\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Demetrius"}, {"Generation": 8.0, "Name": "Peisistratos", "color": "#ff2994", "font": {"color": "white"}, "id": "Peisistratos", "label": "Peisistratos\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Peisistratos"}, {"Generation": 9.0, "Name": "Neoptolemos", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Neoptolemos", "label": "Neoptolemos\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Neoptolemos"}, {"Generation": 9.0, "Name": "Pierre l\u0027Imbecile", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Pierre l\u0027Imbecile", "label": "Pierre l\u0027Imbecile\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Pierre_l%27Imbecile"}, {"Generation": 6.0, "Name": "Anatole", "color": {"background": "black", "border": "#ff007e"}, "font": {"color": "white"}, "id": "Anatole", "label": "Anatole\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Anatole"}, {"Generation": 9.0, "Name": "Preston", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Preston", "label": "Preston\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Preston"}, {"Generation": 10.0, "Name": "Elizabeth Whitt", "color": "#ff52aa", "font": {"color": "white"}, "id": "Elizabeth Whitt", "label": "Elizabeth Whitt\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Elizabeth_Whitt"}, {"Generation": 7.0, "Name": "Restewin", "color": "#ff1489", "font": {"color": "white"}, "id": "Restewin", "label": "Restewin\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Restewin"}, {"Generation": 8.0, "Name": "Uriah Travers", "color": "#ff2994", "font": {"color": "white"}, "id": "Uriah Travers", "label": "Uriah Travers\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Uriah_Travers"}, {"Generation": 8.0, "Name": "Rhys the Rhymer", "color": "#ff2994", "font": {"color": "white"}, "id": "Rhys the Rhymer", "label": "Rhys the Rhymer\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rhys_the_Rhymer"}, {"Generation": 7.0, "Name": "Seren", "color": {"background": "black", "border": "#ff1489"}, "font": {"color": "white"}, "id": "Seren", "label": "Seren\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Seren"}, {"Generation": 10.0, "Name": "Count Rigatoni", "color": "#ff52aa", "font": {"color": "white"}, "id": "Count Rigatoni", "label": "Count Rigatoni\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Count_Rigatoni"}, {"Generation": 11.0, "Name": "Bela", "color": "#ff66b6", "font": {"color": "white"}, "id": "Bela", "label": "Bela\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Bela"}, {"Generation": 6.0, "Name": "Rodolfo", "color": "#ff007e", "font": {"color": "white"}, "id": "Rodolfo", "label": "Rodolfo\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rodolfo"}, {"Generation": 7.0, "Name": "Otto the Pretender", "color": "#ff1489", "font": {"color": "white"}, "id": "Otto the Pretender", "label": "Otto the Pretender\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Otto_the_Pretender"}, {"Generation": 6.0, "Name": "Roque", "color": {"background": "black", "border": "#ff007e"}, "font": {"color": "white"}, "id": "Roque", "label": "Roque\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Roque"}, {"Generation": 8.0, "Name": "Xalbador", "color": "#ff2994", "font": {"color": "white"}, "id": "Xalbador", "label": "Xalbador\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Xalbador"}, {"Generation": 8.0, "Name": "Ayisha", "color": {"background": "black", "border": "#ff2994"}, "font": {"color": "white"}, "id": "Ayisha", "label": "Ayisha\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ayisha"}, {"Generation": 8.0, "Name": "Nathan Skarvan", "color": "#ff2994", "font": {"color": "white"}, "id": "Nathan Skarvan", "label": "Nathan Skarvan\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Nathan_Skarvan"}, {"Generation": 9.0, "Name": "Cum Laude", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Cum Laude", "label": "Cum Laude\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Cum_Laude"}, {"Generation": 8.0, "Name": "Quentin King III", "color": {"background": "black", "border": "#ff2994"}, "font": {"color": "white"}, "id": "Quentin King III", "label": "Quentin King III\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Quentin_King_III"}, {"Generation": 9.0, "Name": "Praxis (Six Knights)", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Praxis (Six Knights)", "label": "Praxis (Six Knights)\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Praxis_(Six_Knights)"}, {"Generation": 9.0, "Name": "Pro Bono", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Pro Bono", "label": "Pro Bono\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Pro_Bono"}, {"Generation": 9.0, "Name": "Probus", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Probus", "label": "Probus\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Probus"}, {"Generation": 9.0, "Name": "Sine Die", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Sine Die", "label": "Sine Die\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Sine_Die"}, {"Generation": 9.0, "Name": "Sine Qua Non", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Sine Qua Non", "label": "Sine Qua Non\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Sine_Qua_Non"}, {"Generation": 10.0, "Name": "Sofia (Malkavian)", "color": "#ff52aa", "font": {"color": "white"}, "id": "Sofia (Malkavian)", "label": "Sofia (Malkavian)\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Sofia_(Malkavian)"}, {"Generation": 11.0, "Name": "Arianna Zanni", "color": "#ff66b6", "font": {"color": "white"}, "id": "Arianna Zanni", "label": "Arianna Zanni\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Arianna_Zanni"}, {"Generation": 6.0, "Name": "Theophana", "color": "#ff007e", "font": {"color": "white"}, "id": "Theophana", "label": "Theophana\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Theophana"}, {"Generation": 7.0, "Name": "Erianthe", "color": "#ff1489", "font": {"color": "white"}, "id": "Erianthe", "label": "Erianthe\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Erianthe"}, {"Generation": 10.0, "Name": "Rolf Trask", "color": "#ff52aa", "font": {"color": "white"}, "id": "Rolf Trask", "label": "Rolf Trask\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rolf_Trask"}, {"Generation": 11.0, "Name": "Razor", "color": "#ff66b6", "font": {"color": "white"}, "id": "Razor", "label": "Razor\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Razor"}, {"Generation": 5.0, "Name": "Tryphosa", "color": "#dd077f", "font": {"color": "white"}, "id": "Tryphosa", "label": "Tryphosa\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Tryphosa"}, {"Generation": 6.0, "Name": "Vasantasena", "color": "#ff007e", "font": {"color": "white"}, "id": "Vasantasena", "label": "Vasantasena\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Vasantasena"}, {"Generation": 10.0, "Name": "Hope", "color": "#ff52aa", "font": {"color": "white"}, "id": "Hope", "label": "Hope\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Hope"}, {"Generation": 7.0, "Name": "Lutz von Hohenzollern", "color": "#ff1489", "font": {"color": "white"}, "id": "Lutz von Hohenzollern", "label": "Lutz von Hohenzollern\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lutz_von_Hohenzollern"}, {"Generation": 8.0, "Name": "Maris Streck", "color": "#ff2994", "font": {"color": "white"}, "id": "Maris Streck", "label": "Maris Streck\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Maris_Streck"}, {"Generation": 5.0, "Name": "Harold Zettler", "color": "#dd077f", "font": {"color": "white"}, "id": "Harold Zettler", "label": "Harold Zettler\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Harold_Zettler"}, {"Generation": 6.0, "Name": "Persephone Tar-Anis", "color": "#ff007e", "font": {"color": "white"}, "id": "Persephone Tar-Anis", "label": "Persephone Tar-Anis\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Persephone_Tar-Anis"}, {"Name": "Daguienne", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Daguienne", "label": "Daguienne", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Daguienne"}, {"Name": "Pelinka", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Pelinka", "label": "Pelinka", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Pelinka"}, {"Name": "Lydia Moscato", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Lydia Moscato", "label": "Lydia Moscato", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lydia_Moscato"}, {"Name": "Harold Beaulieu", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Harold Beaulieu", "label": "Harold Beaulieu", "level": 5, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Harold_Beaulieu"}, {"Name": "Ivo Shandor", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Ivo Shandor", "label": "Ivo Shandor", "level": 8, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ivo_Shandor"}, {"Name": "Jonathan Smith", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Jonathan Smith", "label": "Jonathan Smith", "level": 5, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jonathan_Smith"}, {"Generation": 15.0, "Name": "Acacia", "color": "#ffb8e2", "font": {"color": "white"}, "id": "Acacia", "label": "Acacia\n15 gen", "level": 15.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Acacia"}, {"Generation": 8.0, "Name": "Adrojai", "color": "#ff2994", "font": {"color": "white"}, "id": "Adrojai", "label": "Adrojai\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Adrojai"}, {"Generation": 6.0, "Name": "Albav", "color": "#ff007e", "font": {"color": "white"}, "id": "Albav", "label": "Albav\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Albav"}, {"Generation": 11.0, "Name": "Aleph", "color": "#ff66b6", "font": {"color": "white"}, "id": "Aleph", "label": "Aleph\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aleph"}, {"Generation": 10.0, "Name": "Andreas Andreason", "color": "#ff52aa", "font": {"color": "white"}, "id": "Andreas Andreason", "label": "Andreas Andreason\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Andreas_Andreason"}, {"Generation": 5.0, "Name": "Ankou", "color": "#dd077f", "font": {"color": "white"}, "id": "Ankou", "label": "Ankou\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ankou"}, {"Generation": 11.0, "Name": "Aziz", "color": "#ff66b6", "font": {"color": "white"}, "id": "Aziz", "label": "Aziz\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aziz"}, {"Generation": 6.0, "Name": "Camilla Banes", "color": "#ff007e", "font": {"color": "white"}, "id": "Camilla Banes", "label": "Camilla Banes\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Camilla_Banes"}, {"Generation": 6.0, "Name": "Alicia Barrows", "color": "#ff007e", "font": {"color": "white"}, "id": "Alicia Barrows", "label": "Alicia Barrows\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alicia_Barrows"}, {"Generation": 13.0, "Name": "Big Keith", "color": "#ff8fcc", "font": {"color": "white"}, "id": "Big Keith", "label": "Big Keith\n13 gen", "level": 13.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Big_Keith"}, {"Generation": 5.0, "Name": "Black Hag", "color": "#dd077f", "font": {"color": "white"}, "id": "Black Hag", "label": "Black Hag\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Black_Hag"}, {"Generation": 12.0, "Name": "Frida Boucher", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Frida Boucher", "label": "Frida Boucher\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Frida_Boucher"}, {"Generation": 5.0, "Name": "Brude", "color": "#dd077f", "font": {"color": "white"}, "id": "Brude", "label": "Brude\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Brude"}, {"Generation": 8.0, "Name": "Charity Caize", "color": "#ff2994", "font": {"color": "white"}, "id": "Charity Caize", "label": "Charity Caize\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Charity_Caize"}, {"Generation": 8.0, "Name": "Gates", "color": "#ff2994", "font": {"color": "white"}, "id": "Gates", "label": "Gates\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Gates"}, {"Generation": 9.0, "Name": "Arthur Caldwell", "color": {"background": "black", "border": "#ff3d9f"}, "font": {"color": "white"}, "id": "Arthur Caldwell", "label": "Arthur Caldwell\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Arthur_Caldwell"}, {"Generation": 11.0, "Name": "Chapel", "color": "#ff66b6", "font": {"color": "white"}, "id": "Chapel", "label": "Chapel\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Chapel"}, {"Generation": 11.0, "Name": "Chucko", "color": "#ff66b6", "font": {"color": "white"}, "id": "Chucko", "label": "Chucko\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Chucko"}, {"Generation": 10.0, "Name": "Colette (Malkavian)", "color": "#ff52aa", "font": {"color": "white"}, "id": "Colette (Malkavian)", "label": "Colette (Malkavian)\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Colette_(Malkavian)"}, {"Generation": 7.0, "Name": "Apolonia Czarnecki", "color": "#ff1489", "font": {"color": "white"}, "id": "Apolonia Czarnecki", "label": "Apolonia Czarnecki\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Apolonia_Czarnecki"}, {"Generation": 10.0, "Name": "Arthur Denholm", "color": "#ff52aa", "font": {"color": "white"}, "id": "Arthur Denholm", "label": "Arthur Denholm\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Arthur_Denholm"}, {"Generation": 5.0, "Name": "Dionysian", "color": "#dd077f", "font": {"color": "white"}, "id": "Dionysian", "label": "Dionysian\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dionysian"}, {"Generation": 6.0, "Name": "Diviciacos", "color": "#ff007e", "font": {"color": "white"}, "id": "Diviciacos", "label": "Diviciacos\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Diviciacos"}, {"Generation": 10.0, "Name": "Jason Dodgerson", "color": "#ff52aa", "font": {"color": "white"}, "id": "Jason Dodgerson", "label": "Jason Dodgerson\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jason_Dodgerson"}, {"Generation": 11.0, "Name": "Perfidio D\u00edos", "color": "#ff66b6", "font": {"color": "white"}, "id": "Perfidio D\u00edos", "label": "Perfidio D\u00edos\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Perfidio_D%C3%ADos"}, {"Generation": 8.0, "Name": "Jason Forest", "color": "#ff2994", "font": {"color": "white"}, "id": "Jason Forest", "label": "Jason Forest\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jason_Forest"}, {"Generation": 14.0, "Name": "Fortune (Malkavian)", "color": "#ffa3d7", "font": {"color": "white"}, "id": "Fortune (Malkavian)", "label": "Fortune (Malkavian)\n14 gen", "level": 14.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Fortune_(Malkavian)"}, {"Generation": 7.0, "Name": "Gari", "color": "#ff1489", "font": {"color": "white"}, "id": "Gari", "label": "Gari\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Gari"}, {"Generation": 13.0, "Name": "Glider", "color": "#ff8fcc", "font": {"color": "white"}, "id": "Glider", "label": "Glider\n13 gen", "level": 13.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Glider"}, {"Generation": 8.0, "Name": "Hermann G\u00f6ring", "color": "#ff2994", "font": {"color": "white"}, "id": "Hermann G\u00f6ring", "label": "Hermann G\u00f6ring\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Hermann_G%C3%B6ring"}, {"Generation": 11.0, "Name": "Andrea Harvey-Staboli", "color": "#ff66b6", "font": {"color": "white"}, "id": "Andrea Harvey-Staboli", "label": "Andrea Harvey-Staboli\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Andrea_Harvey-Staboli"}, {"Generation": 11.0, "Name": "Heather", "color": "#ff66b6", "font": {"color": "white"}, "id": "Heather", "label": "Heather\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Heather"}, {"Generation": 9.0, "Name": "Apache Jones", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Apache Jones", "label": "Apache Jones\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Apache_Jones"}, {"Generation": 11.0, "Name": "Kalila", "color": "#ff66b6", "font": {"color": "white"}, "id": "Kalila", "label": "Kalila\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Kalila"}, {"Generation": 9.0, "Name": "Donny Kowalczyk", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Donny Kowalczyk", "label": "Donny Kowalczyk\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Donny_Kowalczyk"}, {"Generation": 10.0, "Name": "Aratz Labarde", "color": "#ff52aa", "font": {"color": "white"}, "id": "Aratz Labarde", "label": "Aratz Labarde\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aratz_Labarde"}, {"Generation": 8.0, "Name": "Lados", "color": "#ff2994", "font": {"color": "white"}, "id": "Lados", "label": "Lados\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lados"}, {"Generation": 9.0, "Name": "Andi Liu", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Andi Liu", "label": "Andi Liu\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Andi_Liu"}, {"Generation": 12.0, "Name": "Mad Mary", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Mad Mary", "label": "Mad Mary\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Mad_Mary"}, {"Generation": 9.0, "Name": "Ruth McGinley", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Ruth McGinley", "label": "Ruth McGinley\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ruth_McGinley"}, {"Generation": 8.0, "Name": "Michael (Malkavian)", "color": "#ff2994", "font": {"color": "white"}, "id": "Michael (Malkavian)", "label": "Michael (Malkavian)\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Michael_(Malkavian)"}, {"Generation": 11.0, "Name": "Midget", "color": "#ff66b6", "font": {"color": "white"}, "id": "Midget", "label": "Midget\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Midget"}, {"Generation": 8.0, "Name": "Allonzo Montoya", "color": "#ff2994", "font": {"color": "white"}, "id": "Allonzo Montoya", "label": "Allonzo Montoya\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Allonzo_Montoya"}, {"Generation": 11.0, "Name": "Jorg Morawitz", "color": "#ff66b6", "font": {"color": "white"}, "id": "Jorg Morawitz", "label": "Jorg Morawitz\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jorg_Morawitz"}, {"Generation": 12.0, "Name": "David Morgan", "color": "#ff7bc1", "font": {"color": "white"}, "id": "David Morgan", "label": "David Morgan\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/David_Morgan"}, {"Generation": 11.0, "Name": "Mother Joe", "color": "#ff66b6", "font": {"color": "white"}, "id": "Mother Joe", "label": "Mother Joe\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Mother_Joe"}, {"Generation": 5.0, "Name": "Necross", "color": "#dd077f", "font": {"color": "white"}, "id": "Necross", "label": "Necross\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Necross"}, {"Generation": 9.0, "Name": "Adolph Nonesuch", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Adolph Nonesuch", "label": "Adolph Nonesuch\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Adolph_Nonesuch"}, {"Generation": 8.0, "Name": "Tobias Novak", "color": "#ff2994", "font": {"color": "white"}, "id": "Tobias Novak", "label": "Tobias Novak\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Tobias_Novak"}, {"Generation": 10.0, "Name": "Pearl (Malkavian)", "color": "#ff52aa", "font": {"color": "white"}, "id": "Pearl (Malkavian)", "label": "Pearl (Malkavian)\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Pearl_(Malkavian)"}, {"Generation": 10.0, "Name": "Persia (Malkavian)", "color": "#ff52aa", "font": {"color": "white"}, "id": "Persia (Malkavian)", "label": "Persia (Malkavian)\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Persia_(Malkavian)"}, {"Generation": 13.0, "Name": "Rex", "color": "#ff8fcc", "font": {"color": "white"}, "id": "Rex", "label": "Rex\n13 gen", "level": 13.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rex"}, {"Generation": 8.0, "Name": "Alessio Rinaldi", "color": "#ff2994", "font": {"color": "white"}, "id": "Alessio Rinaldi", "label": "Alessio Rinaldi\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alessio_Rinaldi"}, {"Generation": 10.0, "Name": "Sheaffer", "color": "#ff52aa", "font": {"color": "white"}, "id": "Sheaffer", "label": "Sheaffer\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Sheaffer"}, {"Generation": 11.0, "Name": "Skin", "color": "#ff66b6", "font": {"color": "white"}, "id": "Skin", "label": "Skin\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Skin"}, {"Generation": 11.0, "Name": "Stanislav", "color": "#ff66b6", "font": {"color": "white"}, "id": "Stanislav", "label": "Stanislav\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Stanislav"}, {"Generation": 11.0, "Name": "Tamika Tanaka", "color": "#ff66b6", "font": {"color": "white"}, "id": "Tamika Tanaka", "label": "Tamika Tanaka\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Tamika_Tanaka"}, {"Generation": 6.0, "Name": "Theron (Malkavian)", "color": "#ff007e", "font": {"color": "white"}, "id": "Theron (Malkavian)", "label": "Theron (Malkavian)\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Theron_(Malkavian)"}, {"Generation": 8.0, "Name": "Willum Timothy", "color": "#ff2994", "font": {"color": "white"}, "id": "Willum Timothy", "label": "Willum Timothy\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Willum_Timothy"}, {"Generation": 10.0, "Name": "Horace Turnbull", "color": "#ff52aa", "font": {"color": "white"}, "id": "Horace Turnbull", "label": "Horace Turnbull\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Horace_Turnbull"}, {"Generation": 12.0, "Name": "Typical Cellar Brood", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Typical Cellar Brood", "label": "Typical Cellar Brood\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Typical_Cellar_Brood"}, {"Generation": 11.0, "Name": "Ugly", "color": "#ff66b6", "font": {"color": "white"}, "id": "Ugly", "label": "Ugly\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ugly"}, {"Generation": 8.0, "Name": "Uncle George", "color": "#ff2994", "font": {"color": "white"}, "id": "Uncle George", "label": "Uncle George\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Uncle_George"}, {"Generation": 5.0, "Name": "Ludmilla van der Holst", "color": "#dd077f", "font": {"color": "white"}, "id": "Ludmilla van der Holst", "label": "Ludmilla van der Holst\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ludmilla_van_der_Holst"}, {"Generation": 10.0, "Name": "Eliza Villanova", "color": "#ff52aa", "font": {"color": "white"}, "id": "Eliza Villanova", "label": "Eliza Villanova\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Eliza_Villanova"}, {"Generation": 12.0, "Name": "Jerri Voss", "color": "#ff7bc1", "font": {"color": "white"}, "id": "Jerri Voss", "label": "Jerri Voss\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jerri_Voss"}, {"Generation": 9.0, "Name": "Arcadian Walsh", "color": "#ff3d9f", "font": {"color": "white"}, "id": "Arcadian Walsh", "label": "Arcadian Walsh\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Arcadian_Walsh"}, {"Generation": 7.0, "Name": "Johann Weltmann", "color": "#ff1489", "font": {"color": "white"}, "id": "Johann Weltmann", "label": "Johann Weltmann\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Johann_Weltmann"}, {"Name": "Aaron", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Aaron", "label": "Aaron", "level": 5, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aaron"}, {"Name": "Agaricus", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Agaricus", "label": "Agaricus", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Agaricus"}, {"Name": "Aiysha", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Aiysha", "label": "Aiysha", "level": 11, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aiysha"}, {"Name": "Alchias", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Alchias", "label": "Alchias", "level": 8, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alchias"}, {"Name": "Antonio Andrade", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Antonio Andrade", "label": "Antonio Andrade", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Antonio_Andrade"}, {"Name": "Bloody Mary", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Bloody Mary", "label": "Bloody Mary", "level": 9, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Bloody_Mary"}, {"Name": "P\u00e1draic Conroy", "color": "#FFFFFF", "font": {"color": "black"}, "id": "P\u00e1draic Conroy", "label": "P\u00e1draic Conroy", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/P%C3%A1draic_Conroy"}, {"Name": "Mr. Damp", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Mr. Damp", "label": "Mr. Damp", "level": 8, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Mr._Damp"}, {"Name": "Aristotle de Laurent", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Aristotle de Laurent", "label": "Aristotle de Laurent", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aristotle_de_Laurent"}, {"Name": "Dev/Null", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Dev/Null", "label": "Dev/Null", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dev/Null"}, {"Name": "Fabien", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Fabien", "label": "Fabien", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Fabien"}, {"Name": "Alistair Grout", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Alistair Grout", "label": "Alistair Grout", "level": 8, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Alistair_Grout"}, {"Name": "Saida Jawad", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Saida Jawad", "label": "Saida Jawad", "level": 12, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Saida_Jawad"}, {"Name": "Marge Kahn", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Marge Kahn", "label": "Marge Kahn", "level": 5, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Marge_Kahn"}, {"Name": "R\u00fcdiger Kleiss", "color": "#FFFFFF", "font": {"color": "black"}, "id": "R\u00fcdiger Kleiss", "label": "R\u00fcdiger Kleiss", "level": 8, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/R%C3%BCdiger_Kleiss"}, {"Name": "Leandro", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Leandro", "label": "Leandro", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Leandro"}, {"Name": "Florentina Lengauer", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Florentina Lengauer", "label": "Florentina Lengauer", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Florentina_Lengauer"}, {"Name": "Lethe (VTM)", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Lethe (VTM)", "label": "Lethe (VTM)", "level": 4, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lethe_(VTM)"}, {"Name": "Malcolm (Malkavian)", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Malcolm (Malkavian)", "label": "Malcolm (Malkavian)", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Malcolm_(Malkavian)"}, {"Name": "Midian", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Midian", "label": "Midian", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Midian"}, {"Name": "Ophelia", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Ophelia", "label": "Ophelia", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ophelia"}, {"Name": "L\u0027Enfant Perdu", "color": "#FFFFFF", "font": {"color": "black"}, "id": "L\u0027Enfant Perdu", "label": "L\u0027Enfant Perdu", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/L%27Enfant_Perdu"}, {"Name": "Rosna", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Rosna", "label": "Rosna", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rosna"}, {"Name": "Takuma Sononda", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Takuma Sononda", "label": "Takuma Sononda", "level": 9, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Takuma_Sononda"}, {"Name": "Reiner Stoschka", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Reiner Stoschka", "label": "Reiner Stoschka", "level": 4, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Reiner_Stoschka"}, {"Name": "Kim Tenzel", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Kim Tenzel", "label": "Kim Tenzel", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Kim_Tenzel"}, {"Name": "Jordan Tremblay", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Jordan Tremblay", "label": "Jordan Tremblay", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Jordan_Tremblay"}, {"Name": "Edie Trust", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Edie Trust", "label": "Edie Trust", "level": 5, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Edie_Trust"}, {"Name": "Al Ussa", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Al Ussa", "label": "Al Ussa", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Al_Ussa"}, {"Name": "Palmer Ward", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Palmer Ward", "label": "Palmer Ward", "level": 9, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Palmer_Ward"}, {"Name": "Abraham Wolff", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Abraham Wolff", "label": "Abraham Wolff", "level": 6, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Abraham_Wolff"}, {"Name": "X", "color": "#FFFFFF", "font": {"color": "black"}, "id": "X", "label": "X", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/X"}]);
+                  edges = new vis.DataSet([{"Childer_Of": "Julius Abrogard", "Sire_Of": "Marshall Bilton", "arrows": "to", "from": "Julius Abrogard", "to": "Marshall Bilton", "width": 1}, {"Childer_Of": "Julius Abrogard", "Sire_Of": "Dawn Nakada", "arrows": "to", "from": "Julius Abrogard", "to": "Dawn Nakada", "width": 1}, {"Childer_Of": "Julius Abrogard", "Sire_Of": "Carter Vanderweyden", "arrows": "to", "from": "Julius Abrogard", "to": "Carter Vanderweyden", "width": 1}, {"Childer_Of": "Hassan abu Khalid", "Sire_Of": "Al-Hakim", "arrows": "to", "from": "Hassan abu Khalid", "to": "Al-Hakim", "width": 1}, {"Childer_Of": "Achadramenos", "Sire_Of": "Aleister Crowley", "arrows": "to", "from": "Achadramenos", "to": "Aleister Crowley", "width": 1}, {"Childer_Of": "Addemar", "Sire_Of": "Trimeggian", "arrows": "to", "from": "Addemar", "to": "Trimeggian", "width": 1}, {"Childer_Of": "Alabaster", "Sire_Of": "Bedelia", "arrows": "to", "from": "Alabaster", "to": "Bedelia", "width": 1}, {"Childer_Of": "Anuitu", "Sire_Of": "Inanna (Malkavian)", "arrows": "to", "from": "Anuitu", "to": "Inanna (Malkavian)", "width": 1}, {"Childer_Of": "Abd ar-Rahman", "Sire_Of": "Jacob (Malkavian)", "arrows": "to", "from": "Abd ar-Rahman", "to": "Jacob (Malkavian)", "width": 1}, {"Childer_Of": "Bedelia", "Sire_Of": "J. Benison Hodge", "arrows": "to", "from": "Bedelia", "to": "J. Benison Hodge", "width": 1}, {"Childer_Of": "Bedelia", "Sire_Of": "Alexander Silverson", "arrows": "to", "from": "Bedelia", "to": "Alexander Silverson", "width": 1}, {"Childer_Of": "William Biltmore", "Sire_Of": "Richard Dunham", "arrows": "to", "from": "William Biltmore", "to": "Richard Dunham", "width": 1}, {"Childer_Of": "Marshall Bilton", "Sire_Of": "John Hanneman", "arrows": "to", "from": "Marshall Bilton", "to": "John Hanneman", "width": 1}, {"Childer_Of": "Licero Blanco", "Sire_Of": "Fabrizia Conteraz", "arrows": "to", "from": "Licero Blanco", "to": "Fabrizia Conteraz", "width": 1}, {"Childer_Of": "Licero Blanco", "Sire_Of": "Alexa Santos", "arrows": "to", "from": "Licero Blanco", "to": "Alexa Santos", "width": 1}, {"Childer_Of": "Brahina", "Sire_Of": "Unmada", "arrows": "to", "from": "Brahina", "to": "Unmada", "width": 1}, {"Childer_Of": "Bronwyn", "Sire_Of": "Corbin McDonough", "arrows": "to", "from": "Bronwyn", "to": "Corbin McDonough", "width": 1}, {"Childer_Of": "Bryan (Malkavian)", "Sire_Of": "Bronwyn", "arrows": "to", "from": "Bryan (Malkavian)", "to": "Bronwyn", "width": 1}, {"Childer_Of": "Jasper Creed", "Sire_Of": "Stephen Norton", "arrows": "to", "from": "Jasper Creed", "to": "Stephen Norton", "width": 1}, {"Childer_Of": "Aleister Crowley", "Sire_Of": "Henry Jekyll/Edward Hyde", "arrows": "to", "from": "Aleister Crowley", "to": "Henry Jekyll/Edward Hyde", "width": 1}, {"Childer_Of": "Cybele", "Sire_Of": "Petaniqua", "arrows": "to", "from": "Cybele", "to": "Petaniqua", "width": 1}, {"Childer_Of": "Demtius", "Sire_Of": "Gregorius Dimities", "arrows": "to", "from": "Demtius", "to": "Gregorius Dimities", "width": 1}, {"Childer_Of": "Dimitri", "Sire_Of": "Killikillarven", "arrows": "to", "from": "Dimitri", "to": "Killikillarven", "width": 1}, {"Childer_Of": "Dirty Ben", "Sire_Of": "Cassandra Langely", "arrows": "to", "from": "Dirty Ben", "to": "Cassandra Langely", "width": 1}, {"Childer_Of": "Dositheus", "Sire_Of": "Abraham Mellon", "arrows": "to", "from": "Dositheus", "to": "Abraham Mellon", "width": 1}, {"Childer_Of": "Richard Dunham", "Sire_Of": "Halsey", "arrows": "to", "from": "Richard Dunham", "to": "Halsey", "width": 1}, {"Childer_Of": "Gregory of Gloucester", "Sire_Of": "Juliet Parr", "arrows": "to", "from": "Gregory of Gloucester", "to": "Juliet Parr", "width": 1}, {"Childer_Of": "Halsey", "Sire_Of": "Leysha", "arrows": "to", "from": "Halsey", "to": "Leysha", "width": 1}, {"Childer_Of": "Harry Hirsch", "Sire_Of": "Scott Levin", "arrows": "to", "from": "Harry Hirsch", "to": "Scott Levin", "width": 1}, {"Childer_Of": "Irmingarda", "Sire_Of": "Wiftet", "arrows": "to", "from": "Irmingarda", "to": "Wiftet", "width": 1}, {"Childer_Of": "Ismene", "Sire_Of": "Sennacherib", "arrows": "to", "from": "Ismene", "to": "Sennacherib", "width": 1}, {"Childer_Of": "Jacob (Malkavian)", "Sire_Of": "Jason (Malkavian)", "arrows": "to", "from": "Jacob (Malkavian)", "to": "Jason (Malkavian)", "width": 1}, {"Childer_Of": "Jacob (Malkavian)", "Sire_Of": "Jeanette Voerman", "arrows": "to", "from": "Jacob (Malkavian)", "to": "Jeanette Voerman", "width": 1}, {"Childer_Of": "Jacob (Malkavian)", "Sire_Of": "Therese Voerman", "arrows": "to", "from": "Jacob (Malkavian)", "to": "Therese Voerman", "width": 1}, {"Childer_Of": "Henry Jekyll/Edward Hyde", "Sire_Of": "J. Oswald Hyde-White", "arrows": "to", "from": "Henry Jekyll/Edward Hyde", "to": "J. Oswald Hyde-White", "width": 1}, {"Childer_Of": "Evan Klein", "Sire_Of": "Patricia Montgomery", "arrows": "to", "from": "Evan Klein", "to": "Patricia Montgomery", "width": 1}, {"Childer_Of": "Lamdiel", "Sire_Of": "Addemar", "arrows": "to", "from": "Lamdiel", "to": "Addemar", "width": 1}, {"Childer_Of": "Lasker", "Sire_Of": "Maureen O\u0027Leary", "arrows": "to", "from": "Lasker", "to": "Maureen O\u0027Leary", "width": 1}, {"Childer_Of": "Antoine Le Fanu", "Sire_Of": "William Biltmore", "arrows": "to", "from": "Antoine Le Fanu", "to": "William Biltmore", "width": 1}, {"Childer_Of": "Antoine Le Fanu", "Sire_Of": "Iago", "arrows": "to", "from": "Antoine Le Fanu", "to": "Iago", "width": 1}, {"Childer_Of": "Lerterimas", "Sire_Of": "Louhi", "arrows": "to", "from": "Lerterimas", "to": "Louhi", "width": 1}, {"Childer_Of": "Scott Levin", "Sire_Of": "Cassie", "arrows": "to", "from": "Scott Levin", "to": "Cassie", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Anuitu", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Anuitu", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Abd ar-Rahman", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Abd ar-Rahman", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Brahina", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Brahina", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Cybele", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Cybele", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Eater", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Eater", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Lamdiel", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Lamdiel", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Lerterimas", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Lerterimas", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Nissiku", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Nissiku", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Panehesy", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Panehesy", "width": 1}, {"Childer_Of": "Malkavian Antediluvian", "Sire_Of": "Plague-Bride", "arrows": "to", "from": "Malkavian Antediluvian", "to": "Plague-Bride", "width": 1}, {"Childer_Of": "Marcus (Malkavian)", "Sire_Of": "Octavio", "arrows": "to", "from": "Marcus (Malkavian)", "to": "Octavio", "width": 1}, {"Childer_Of": "Florence Marston", "Sire_Of": "Darius Shirazi", "arrows": "to", "from": "Florence Marston", "to": "Darius Shirazi", "width": 1}, {"Childer_Of": "Colin McAllister", "Sire_Of": "Meixiu", "arrows": "to", "from": "Colin McAllister", "to": "Meixiu", "width": 1}, {"Childer_Of": "Loretta Millhaven", "Sire_Of": "Adelaide Davis", "arrows": "to", "from": "Loretta Millhaven", "to": "Adelaide Davis", "width": 1}, {"Childer_Of": "Mon Cheri", "Sire_Of": "Milo (Malkavian)", "arrows": "to", "from": "Mon Cheri", "to": "Milo (Malkavian)", "width": 1}, {"Childer_Of": "Morel", "Sire_Of": "Antoine the Lost", "arrows": "to", "from": "Morel", "to": "Antoine the Lost", "width": 1}, {"Childer_Of": "Myriam", "Sire_Of": "Bosch", "arrows": "to", "from": "Myriam", "to": "Bosch", "width": 1}, {"Childer_Of": "Douglas Netchurch", "Sire_Of": "Nancy Reage", "arrows": "to", "from": "Douglas Netchurch", "to": "Nancy Reage", "width": 1}, {"Childer_Of": "Jason Newberry", "Sire_Of": "Evan Klein", "arrows": "to", "from": "Jason Newberry", "to": "Evan Klein", "width": 1}, {"Childer_Of": "Stephen Norton", "Sire_Of": "Jeffrey Granger", "arrows": "to", "from": "Stephen Norton", "to": "Jeffrey Granger", "width": 1}, {"Childer_Of": "Maureen O\u0027Leary", "Sire_Of": "Ben Smith", "arrows": "to", "from": "Maureen O\u0027Leary", "to": "Ben Smith", "width": 1}, {"Childer_Of": "Maureen O\u0027Leary", "Sire_Of": "Jason Newberry", "arrows": "to", "from": "Maureen O\u0027Leary", "to": "Jason Newberry", "width": 1}, {"Childer_Of": "Maureen O\u0027Leary", "Sire_Of": "Paula Smith", "arrows": "to", "from": "Maureen O\u0027Leary", "to": "Paula Smith", "width": 1}, {"Childer_Of": "Panehesy", "Sire_Of": "Pashedu of Thebes", "arrows": "to", "from": "Panehesy", "to": "Pashedu of Thebes", "width": 1}, {"Childer_Of": "Juliet Parr", "Sire_Of": "Letitia Shy", "arrows": "to", "from": "Juliet Parr", "to": "Letitia Shy", "width": 1}, {"Childer_Of": "Pashedu of Thebes", "Sire_Of": "Demetrius", "arrows": "to", "from": "Pashedu of Thebes", "to": "Demetrius", "width": 1}, {"Childer_Of": "Peisistratos", "Sire_Of": "Neoptolemos", "arrows": "to", "from": "Peisistratos", "to": "Neoptolemos", "width": 1}, {"Childer_Of": "Pierre l\u0027Imbecile", "Sire_Of": "Anatole", "arrows": "to", "from": "Pierre l\u0027Imbecile", "to": "Anatole", "width": 1}, {"Childer_Of": "Preston", "Sire_Of": "Elizabeth Whitt", "arrows": "to", "from": "Preston", "to": "Elizabeth Whitt", "width": 1}, {"Childer_Of": "Restewin", "Sire_Of": "Uriah Travers", "arrows": "to", "from": "Restewin", "to": "Uriah Travers", "width": 1}, {"Childer_Of": "Rhys the Rhymer", "Sire_Of": "Seren", "arrows": "to", "from": "Rhys the Rhymer", "to": "Seren", "width": 1}, {"Childer_Of": "Count Rigatoni", "Sire_Of": "Bela", "arrows": "to", "from": "Count Rigatoni", "to": "Bela", "width": 1}, {"Childer_Of": "Rodolfo", "Sire_Of": "Otto the Pretender", "arrows": "to", "from": "Rodolfo", "to": "Otto the Pretender", "width": 1}, {"Childer_Of": "Roque", "Sire_Of": "Xalbador", "arrows": "to", "from": "Roque", "to": "Xalbador", "width": 1}, {"Childer_Of": "Sennacherib", "Sire_Of": "Ayisha", "arrows": "to", "from": "Sennacherib", "to": "Ayisha", "width": 1}, {"Childer_Of": "Seren", "Sire_Of": "Gregory of Gloucester", "arrows": "to", "from": "Seren", "to": "Gregory of Gloucester", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Cum Laude", "arrows": "to", "from": "Nathan Skarvan", "to": "Cum Laude", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Quentin King III", "arrows": "to", "from": "Nathan Skarvan", "to": "Quentin King III", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Praxis (Six Knights)", "arrows": "to", "from": "Nathan Skarvan", "to": "Praxis (Six Knights)", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Pro Bono", "arrows": "to", "from": "Nathan Skarvan", "to": "Pro Bono", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Probus", "arrows": "to", "from": "Nathan Skarvan", "to": "Probus", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Sine Die", "arrows": "to", "from": "Nathan Skarvan", "to": "Sine Die", "width": 1}, {"Childer_Of": "Nathan Skarvan", "Sire_Of": "Sine Qua Non", "arrows": "to", "from": "Nathan Skarvan", "to": "Sine Qua Non", "width": 1}, {"Childer_Of": "Sofia (Malkavian)", "Sire_Of": "Arianna Zanni", "arrows": "to", "from": "Sofia (Malkavian)", "to": "Arianna Zanni", "width": 1}, {"Childer_Of": "Theophana", "Sire_Of": "Erianthe", "arrows": "to", "from": "Theophana", "to": "Erianthe", "width": 1}, {"Childer_Of": "Rolf Trask", "Sire_Of": "Razor", "arrows": "to", "from": "Rolf Trask", "to": "Razor", "width": 1}, {"Childer_Of": "Trimeggian", "Sire_Of": "Douglas Netchurch", "arrows": "to", "from": "Trimeggian", "to": "Douglas Netchurch", "width": 1}, {"Childer_Of": "Tryphosa", "Sire_Of": "Rodolfo", "arrows": "to", "from": "Tryphosa", "to": "Rodolfo", "width": 1}, {"Childer_Of": "Unmada", "Sire_Of": "Vasantasena", "arrows": "to", "from": "Unmada", "to": "Vasantasena", "width": 1}, {"Childer_Of": "Carter Vanderweyden", "Sire_Of": "Hope", "arrows": "to", "from": "Carter Vanderweyden", "to": "Hope", "width": 1}, {"Childer_Of": "Lutz von Hohenzollern", "Sire_Of": "Maris Streck", "arrows": "to", "from": "Lutz von Hohenzollern", "to": "Maris Streck", "width": 1}, {"Childer_Of": "Harold Zettler", "Sire_Of": "Persephone Tar-Anis", "arrows": "to", "from": "Harold Zettler", "to": "Persephone Tar-Anis", "width": 1}, {"Childer_Of": "Daguienne", "Sire_Of": "Pelinka", "arrows": "to", "from": "Daguienne", "to": "Pelinka", "width": 1}, {"Childer_Of": "Lydia Moscato", "Sire_Of": "Harold Beaulieu", "arrows": "to", "from": "Lydia Moscato", "to": "Harold Beaulieu", "width": 1}, {"Childer_Of": "Ivo Shandor", "Sire_Of": "Jonathan Smith", "arrows": "to", "from": "Ivo Shandor", "to": "Jonathan Smith", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+                        
+ network.on("doubleClick", function(params) {
+                        if (params.nodes.length > 0) {
+                            var nodeId = params.nodes[0];
+                            var node = nodes.get(nodeId);
+                            console.log(node)
+                            if (node && node.title) {
+                                //window.open(node.title, "_blank");
+
+                                //console.log(window.parent.parent)
+
+                                //var outboundData = Object.assign({
+                                //isStreamlitMessage: true,
+                                //type: "link_wrong",
+                                //}, node.title)
+
+                                window.parent.parent.postMessage({ type: 'LINK', payload: node.title }, "*")
+                            }
+                        }   
+                    });
+
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

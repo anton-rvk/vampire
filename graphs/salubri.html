@@ -1,0 +1,555 @@
+<html>
+ <body style="background-color:#222222;">
+   <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+			#mycard {
+ 				background-color: #222222;
+			
+  border: 1px solid #222222;
+}
+ #loadingBar { display: none !important;}
+
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #222222;
+                 border: 1px solid #222222;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div id="mycard" class="card" style="width: 100%">
+            
+            
+              <div id="filter-menu" class="card-header">
+                <div class="row no-gutters">
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'item')"
+                            id="select-item"
+                        >
+                        <option value="">Select a network item</option>
+                        <option value="edge">edge</option>
+                        <option value="node">node</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'property')"
+                            id="select-property"
+                        >
+                        <option value="">Select a property...</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            id="select-value"
+                        >
+                        <option value="">Select value(s)...</option>
+                    </select>
+                  </div>
+                  <div class="col-1 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="highlightFilter(filter);">Filter</button>
+                  </div>
+                  <div class="col-2 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="clearFilter(true)">Reset Selection</button>
+                  </div>
+                </div>
+              </div>
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+                  // explicitly using onItemAdd and this function as we need to save multiple values
+                  let updateValueFilter = function() {
+                      return function () {
+                      filter['value'].push(arguments[0])
+                      }
+                  }
+
+                  let valueControl = new TomSelect("#select-value",{
+                      maxItems: null,
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: updateValueFilter()
+                  });
+
+                  let addValues = function() {
+                      return function () {
+                          // clear the current value options and add the selected attribute values
+                          // tom-select handles duplicates
+                          let selectedProperty = arguments[0];
+                          valueControl.clear();
+                          valueControl.clearOptions();
+                          filter['value'] = []
+                          if (filter['item'] === 'node') {
+                              for (let each in allNodes) {
+                                  valueControl.addOption({
+                                      id:allNodes[each][selectedProperty],
+                                      title:allNodes[each][selectedProperty]
+                                  })
+                              }
+                          }
+                          else if (filter['item'] === 'edge') {
+                              for (let each in allEdges) {
+                                  valueControl.addOption({
+                                      id:allEdges[each][selectedProperty],
+                                      title:allEdges[each][selectedProperty]
+                                  })
+                              }
+                          }
+                      }
+                  };
+
+                  let propControl = new TomSelect("#select-property",{
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addValues()
+                  });
+
+                  let addProperties = function() {
+                      return function () {
+                          // loops through the selected network item and adds the attributes to dropdown
+                          // tom-select handles duplicates
+                          clearFilter(false)
+                          if (arguments[0] === 'edge') {
+                              for (let each in allEdges) {
+                                  if (allEdges.hasOwnProperty(each)) {
+                                      for (let eachProp in allEdges[each]) {
+                                          if (allEdges[each].hasOwnProperty(eachProp)) {
+                                              if (['Generation', 'Name', 'Sire_Of', 'Childer_Of'].includes(eachProp)){
+propControl.addOption({id: eachProp, title: eachProp})
+}
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          else if (arguments[0] === 'node') {
+                              for (let each in allNodes) {
+                                  if (allNodes.hasOwnProperty(each)) {
+                                      for (let eachProp in allNodes[each]) {
+                                          if (allNodes[each].hasOwnProperty(eachProp)
+                                              && (eachProp !== 'hidden' && eachProp !== 'savedLabel'
+                                                  && eachProp !== 'hiddenLabel')) {
+                                              if (['Generation', 'Name', 'Sire_Of', 'Childer_Of'].includes(eachProp)){
+propControl.addOption({id: eachProp, title: eachProp})
+}
+
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  };
+
+                  let itemControl = new TomSelect("#select-item",{
+                      create: false,
+                      sortField:{
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addProperties()
+                  });
+
+                  function clearFilter(reset) {
+                      // utility function to clear all the selected filter options
+                      // if reset is set to true, the existing filter will be removed
+                      // else, only the dropdown options are cleared
+                      propControl.clear();
+                      propControl.clearOptions();
+                      valueControl.clear();
+                      valueControl.clearOptions();
+                      filter = {
+                          item : '',
+                          property : '',
+                          value : []
+                      }
+                      if (reset) {
+                          itemControl.clear();
+                          filterHighlight({nodes: []})
+                      }
+                  }
+
+                  function updateFilter(value, key) {
+                      // key could be 'item' or 'property' and value is as selected in dropdown
+                      filter[key] = value
+                  }
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"Generation": 7.0, "Name": "Achmet", "color": "#1d702e", "font": {"color": "white"}, "id": "Achmet", "label": "Achmet\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Achmet"}, {"Generation": 8.0, "Name": "Aisha bint Wahiba", "color": "#217620", "font": {"color": "white"}, "id": "Aisha bint Wahiba", "label": "Aisha bint Wahiba\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aisha_bint_Wahiba"}, {"Generation": 5.0, "Name": "Agathodaimon", "color": "#185b56", "font": {"color": "white"}, "id": "Agathodaimon", "label": "Agathodaimon\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Agathodaimon"}, {"Generation": 6.0, "Name": "Lille", "color": "#1b693c", "font": {"color": "white"}, "id": "Lille", "label": "Lille\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Lille"}, {"Generation": 4.0, "Name": "Akhraziel", "color": "#154d63", "font": {"color": "white"}, "id": "Akhraziel", "label": "Akhraziel\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Akhraziel"}, {"Generation": 5.0, "Name": "Nuriel (Salubri)", "color": "#185b56", "font": {"color": "white"}, "id": "Nuriel (Salubri)", "label": "Nuriel (Salubri)\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Nuriel_(Salubri)"}, {"Generation": 8.0, "Name": "Althea of Phillipus", "color": "#217620", "font": {"color": "white"}, "id": "Althea of Phillipus", "label": "Althea of Phillipus\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Althea_of_Phillipus"}, {"Generation": 9.0, "Name": "Yael", "color": "#268b1f", "font": {"color": "white"}, "id": "Yael", "label": "Yael\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Yael"}, {"Generation": 5.0, "Name": "Ezrael", "color": "#185b56", "font": {"color": "white"}, "id": "Ezrael", "label": "Ezrael\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ezrael"}, {"Generation": 6.0, "Name": "Mahtiel", "color": "#1b693c", "font": {"color": "white"}, "id": "Mahtiel", "label": "Mahtiel\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Mahtiel"}, {"Generation": 6.0, "Name": "Rothriel", "color": "#1b693c", "font": {"color": "white"}, "id": "Rothriel", "label": "Rothriel\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rothriel"}, {"Generation": 7.0, "Name": "Gabriel (seventh generation Salubri)", "color": "#1d702e", "font": {"color": "white"}, "id": "Gabriel (seventh generation Salubri)", "label": "Gabriel (seventh generation Salubri)\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Gabriel_(seventh_generation_Salubri)"}, {"Generation": 6.0, "Name": "Generys", "color": "#1b693c", "font": {"color": "white"}, "id": "Generys", "label": "Generys\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Generys"}, {"Generation": 7.0, "Name": "Matthias of Bath", "color": "#1d702e", "font": {"color": "white"}, "id": "Matthias of Bath", "label": "Matthias of Bath\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Matthias_of_Bath"}, {"Generation": 6.0, "Name": "Hillel", "color": "#1b693c", "font": {"color": "white"}, "id": "Hillel", "label": "Hillel\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Hillel"}, {"Generation": 4.0, "Name": "Hrorsh", "color": "#154d63", "font": {"color": "white"}, "id": "Hrorsh", "label": "Hrorsh\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Hrorsh"}, {"Generation": 5.0, "Name": "Simeon", "color": "#185b56", "font": {"color": "white"}, "id": "Simeon", "label": "Simeon\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Simeon"}, {"Generation": 5.0, "Name": "Ithuriel", "color": "#185b56", "font": {"color": "white"}, "id": "Ithuriel", "label": "Ithuriel\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ithuriel"}, {"Generation": 7.0, "Name": "Matthias", "color": "#1d702e", "font": {"color": "white"}, "id": "Matthias", "label": "Matthias\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Matthias"}, {"Generation": 6.0, "Name": "Orpheus (Salubri)", "color": "#1b693c", "font": {"color": "white"}, "id": "Orpheus (Salubri)", "label": "Orpheus (Salubri)\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Orpheus_(Salubri)"}, {"Generation": 4.0, "Name": "Rayzeel", "color": "#154d63", "font": {"color": "white"}, "id": "Rayzeel", "label": "Rayzeel\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rayzeel"}, {"Generation": 5.0, "Name": "Rebekah (Salubri)", "color": "#185b56", "font": {"color": "white"}, "id": "Rebekah (Salubri)", "label": "Rebekah (Salubri)\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rebekah_(Salubri)"}, {"Generation": 6.0, "Name": "Joachim", "color": "#1b693c", "font": {"color": "white"}, "id": "Joachim", "label": "Joachim\n6 gen", "level": 6.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Joachim"}, {"Generation": 4.0, "Name": "Samiel", "color": "#154d63", "font": {"color": "white"}, "id": "Samiel", "label": "Samiel\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Samiel"}, {"Generation": 5.0, "Name": "Aariel", "color": "#185b56", "font": {"color": "white"}, "id": "Aariel", "label": "Aariel\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aariel"}, {"Generation": 5.0, "Name": "Qawiyya el-Ghaduba", "color": "#185b56", "font": {"color": "white"}, "id": "Qawiyya el-Ghaduba", "label": "Qawiyya el-Ghaduba\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Qawiyya_el-Ghaduba"}, {"Generation": 5.0, "Name": "Gabriel (fifth generation Salubri)", "color": "#185b56", "font": {"color": "white"}, "id": "Gabriel (fifth generation Salubri)", "label": "Gabriel (fifth generation Salubri)\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Gabriel_(fifth_generation_Salubri)"}, {"Generation": 5.0, "Name": "Uriel (Salubri)", "color": "#185b56", "font": {"color": "white"}, "id": "Uriel (Salubri)", "label": "Uriel (Salubri)\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Uriel_(Salubri)"}, {"Generation": 5.0, "Name": "Za\u0027aphiel", "color": "#185b56", "font": {"color": "white"}, "id": "Za\u0027aphiel", "label": "Za\u0027aphiel\n5 gen", "level": 5.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Za%27aphiel"}, {"Generation": 3.0, "Name": "Saulot", "color": "#113f71", "font": {"color": "white"}, "id": "Saulot", "label": "Saulot\n3 gen", "level": 3.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Saulot"}, {"Generation": 4.0, "Name": "Nahum ben Enosh", "color": "#154d63", "font": {"color": "white"}, "id": "Nahum ben Enosh", "label": "Nahum ben Enosh\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Nahum_ben_Enosh"}, {"Generation": 4.0, "Name": "Mokur", "color": "#154d63", "font": {"color": "white"}, "id": "Mokur", "label": "Mokur\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Mokur"}, {"Generation": 4.0, "Name": "Seker", "color": "#154d63", "font": {"color": "white"}, "id": "Seker", "label": "Seker\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Seker"}, {"Generation": 4.0, "Name": "Yavok", "color": "#154d63", "font": {"color": "white"}, "id": "Yavok", "label": "Yavok\n4 gen", "level": 4.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Yavok"}, {"Generation": 10.0, "Name": "Thomas the Angry", "color": "#289a1e", "font": {"color": "white"}, "id": "Thomas the Angry", "label": "Thomas the Angry\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Thomas_the_Angry"}, {"Generation": 11.0, "Name": "Kervos", "color": "#29a81c", "font": {"color": "white"}, "id": "Kervos", "label": "Kervos\n11 gen", "level": 11.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Kervos"}, {"Name": "Red Solomon", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Red Solomon", "label": "Red Solomon", "level": 5, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Red_Solomon"}, {"Name": "Serenna", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Serenna", "label": "Serenna", "level": 8, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Serenna"}, {"Generation": 8.0, "Name": "Abaddon (Salubri)", "color": "#217620", "font": {"color": "white"}, "id": "Abaddon (Salubri)", "label": "Abaddon (Salubri)\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Abaddon_(Salubri)"}, {"Generation": 7.0, "Name": "Adonai", "color": {"background": "black", "border": "#1d702e"}, "font": {"color": "white"}, "id": "Adonai", "label": "Adonai\n7 gen", "level": 7.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Adonai"}, {"Generation": 9.0, "Name": "Aniel", "color": "#268b1f", "font": {"color": "white"}, "id": "Aniel", "label": "Aniel\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Aniel"}, {"Generation": 10.0, "Name": "Dalia Nakache", "color": "#289a1e", "font": {"color": "white"}, "id": "Dalia Nakache", "label": "Dalia Nakache\n10 gen", "level": 10.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dalia_Nakache"}, {"Generation": 12.0, "Name": "Dominica", "color": "#22b419", "font": {"color": "white"}, "id": "Dominica", "label": "Dominica\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Dominica"}, {"Generation": 9.0, "Name": "Ilonka", "color": "#268b1f", "font": {"color": "white"}, "id": "Ilonka", "label": "Ilonka\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ilonka"}, {"Generation": 9.0, "Name": "Malachi", "color": "#268b1f", "font": {"color": "white"}, "id": "Malachi", "label": "Malachi\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Malachi"}, {"Generation": 9.0, "Name": "Sakhar", "color": "#268b1f", "font": {"color": "white"}, "id": "Sakhar", "label": "Sakhar\n9 gen", "level": 9.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Sakhar"}, {"Generation": 8.0, "Name": "Seraphina", "color": "#217620", "font": {"color": "white"}, "id": "Seraphina", "label": "Seraphina\n8 gen", "level": 8.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Seraphina"}, {"Generation": 12.0, "Name": "Carol Winfield", "color": "#22b419", "font": {"color": "white"}, "id": "Carol Winfield", "label": "Carol Winfield\n12 gen", "level": 12.0, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Carol_Winfield"}, {"Name": "Ahab", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Ahab", "label": "Ahab", "level": 10, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Ahab"}, {"Name": "Opikun", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Opikun", "label": "Opikun", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Opikun"}, {"Name": "Silas (Salubri)", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Silas (Salubri)", "label": "Silas (Salubri)", "level": 9, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Silas_(Salubri)"}, {"Name": "Rigoberto Vindel", "color": "#FFFFFF", "font": {"color": "black"}, "id": "Rigoberto Vindel", "label": "Rigoberto Vindel", "level": 7, "shape": "box", "size": 10, "title": "https://whitewolf.fandom.com/wiki/Rigoberto_Vindel"}]);
+                  edges = new vis.DataSet([{"Childer_Of": "Achmet", "Sire_Of": "Aisha bint Wahiba", "arrows": "to", "from": "Achmet", "to": "Aisha bint Wahiba", "width": 1}, {"Childer_Of": "Agathodaimon", "Sire_Of": "Lille", "arrows": "to", "from": "Agathodaimon", "to": "Lille", "width": 1}, {"Childer_Of": "Akhraziel", "Sire_Of": "Nuriel (Salubri)", "arrows": "to", "from": "Akhraziel", "to": "Nuriel (Salubri)", "width": 1}, {"Childer_Of": "Althea of Phillipus", "Sire_Of": "Yael", "arrows": "to", "from": "Althea of Phillipus", "to": "Yael", "width": 1}, {"Childer_Of": "Ezrael", "Sire_Of": "Mahtiel", "arrows": "to", "from": "Ezrael", "to": "Mahtiel", "width": 1}, {"Childer_Of": "Ezrael", "Sire_Of": "Rothriel", "arrows": "to", "from": "Ezrael", "to": "Rothriel", "width": 1}, {"Childer_Of": "Gabriel (seventh generation Salubri)", "Sire_Of": "Althea of Phillipus", "arrows": "to", "from": "Gabriel (seventh generation Salubri)", "to": "Althea of Phillipus", "width": 1}, {"Childer_Of": "Generys", "Sire_Of": "Matthias of Bath", "arrows": "to", "from": "Generys", "to": "Matthias of Bath", "width": 1}, {"Childer_Of": "Hillel", "Sire_Of": "Gabriel (seventh generation Salubri)", "arrows": "to", "from": "Hillel", "to": "Gabriel (seventh generation Salubri)", "width": 1}, {"Childer_Of": "Hrorsh", "Sire_Of": "Simeon", "arrows": "to", "from": "Hrorsh", "to": "Simeon", "width": 1}, {"Childer_Of": "Ithuriel", "Sire_Of": "Hillel", "arrows": "to", "from": "Ithuriel", "to": "Hillel", "width": 1}, {"Childer_Of": "Lille", "Sire_Of": "Matthias", "arrows": "to", "from": "Lille", "to": "Matthias", "width": 1}, {"Childer_Of": "Orpheus (Salubri)", "Sire_Of": "Achmet", "arrows": "to", "from": "Orpheus (Salubri)", "to": "Achmet", "width": 1}, {"Childer_Of": "Rayzeel", "Sire_Of": "Agathodaimon", "arrows": "to", "from": "Rayzeel", "to": "Agathodaimon", "width": 1}, {"Childer_Of": "Rebekah (Salubri)", "Sire_Of": "Joachim", "arrows": "to", "from": "Rebekah (Salubri)", "to": "Joachim", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Aariel", "arrows": "to", "from": "Samiel", "to": "Aariel", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Qawiyya el-Ghaduba", "arrows": "to", "from": "Samiel", "to": "Qawiyya el-Ghaduba", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Ezrael", "arrows": "to", "from": "Samiel", "to": "Ezrael", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Gabriel (fifth generation Salubri)", "arrows": "to", "from": "Samiel", "to": "Gabriel (fifth generation Salubri)", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Ithuriel", "arrows": "to", "from": "Samiel", "to": "Ithuriel", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Uriel (Salubri)", "arrows": "to", "from": "Samiel", "to": "Uriel (Salubri)", "width": 1}, {"Childer_Of": "Samiel", "Sire_Of": "Za\u0027aphiel", "arrows": "to", "from": "Samiel", "to": "Za\u0027aphiel", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Akhraziel", "arrows": "to", "from": "Saulot", "to": "Akhraziel", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Nahum ben Enosh", "arrows": "to", "from": "Saulot", "to": "Nahum ben Enosh", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Hrorsh", "arrows": "to", "from": "Saulot", "to": "Hrorsh", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Mokur", "arrows": "to", "from": "Saulot", "to": "Mokur", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Rayzeel", "arrows": "to", "from": "Saulot", "to": "Rayzeel", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Samiel", "arrows": "to", "from": "Saulot", "to": "Samiel", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Seker", "arrows": "to", "from": "Saulot", "to": "Seker", "width": 1}, {"Childer_Of": "Saulot", "Sire_Of": "Yavok", "arrows": "to", "from": "Saulot", "to": "Yavok", "width": 1}, {"Childer_Of": "Simeon", "Sire_Of": "Generys", "arrows": "to", "from": "Simeon", "to": "Generys", "width": 1}, {"Childer_Of": "Thomas the Angry", "Sire_Of": "Kervos", "arrows": "to", "from": "Thomas the Angry", "to": "Kervos", "width": 1}, {"Childer_Of": "Red Solomon", "Sire_Of": "Serenna", "arrows": "to", "from": "Red Solomon", "to": "Serenna", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+                        
+ network.on("doubleClick", function(params) {
+                        if (params.nodes.length > 0) {
+                            var nodeId = params.nodes[0];
+                            var node = nodes.get(nodeId);
+                            console.log(node)
+                            if (node && node.title) {
+                                //window.open(node.title, "_blank");
+
+                                //console.log(window.parent.parent)
+
+                                //var outboundData = Object.assign({
+                                //isStreamlitMessage: true,
+                                //type: "link_wrong",
+                                //}, node.title)
+
+                                window.parent.parent.postMessage({ type: 'LINK', payload: node.title }, "*")
+                            }
+                        }   
+                    });
+
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
