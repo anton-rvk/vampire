@@ -66,11 +66,11 @@ def page_elements(clan_description,
         components.v1.html(f"""
                     <script>
 
-                        window.parent.addEventListener('message', function handleMessage(event){{
+                        window.parent.parent.addEventListener('message', function handleMessage(event){{
                                 if (event.data && event.data.type == "LINK"){{
                                     console.log("Event was received")
-                                    window.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
-                                    target = window.parent.document.getElementById('{iframe_html_id}')
+                                    window.parent.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
+                                    target = window.parent.parent.document.getElementById('{iframe_html_id}')
                                     if (target) {{
                                         target.scrollIntoView({{behavior: 'smooth'}});
                                     }}
