@@ -75,6 +75,9 @@ def page_elements(clan_description,
                                     if (target) {{
                                         target.scrollIntoView({{behavior: 'smooth'}});
                                     }}
+                                    else {{
+                                        console.log("Element not found")
+                                    }}
                                 }}
                         }})
 
