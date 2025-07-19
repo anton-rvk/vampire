@@ -206,10 +206,10 @@ components.v1.html(f"""
                     <script>
                         console.log("The parent of the bridge:")
                         console.log(window.parent.parent)
-                        window.parent.addEventListener('message', function handleMessage(event){{
+                        window.parent.parent.addEventListener('message', function handleMessage(event){{
                                 if (event.data && event.data.type == "LINK"){{
-                                    window.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
-                        
+                                    console.log("Got the event 07")
+                                    window.parent.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
                                 }}
                         }})
 
