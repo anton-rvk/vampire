@@ -63,14 +63,13 @@ def page_elements(clan_description,
 
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
 
-
         components.v1.html(f"""
                     <script>
 
                         window.parent.addEventListener('message', function handleMessage(event){{
                                 if (event.data && event.data.type == "LINK"){{
+                                    console.log("Event was received")
                                     window.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
-                        
                                     target = window.parent.document.getElementById('{iframe_html_id}')
                                     if (target) {{
                                         target.scrollIntoView({{behavior: 'smooth'}});
