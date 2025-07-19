@@ -71,7 +71,7 @@ def page_elements(clan_description,
                                     console.log("Event was received")
                                     window.parent.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
                            
-                                    window.onload = function (){{
+                                    window.parent.parent.onload = function (){{
                                         target = window.parent.parent.document.getElementById('{iframe_html_id}')
 
                                         console.log(window.parent.parent.document)
