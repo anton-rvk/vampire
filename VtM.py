@@ -3,6 +3,7 @@ from navigation import make_sidebar
 from streamlit import components
 from st_bridge import bridge
 import time 
+import webbrowser
 
 import assets.clan_colors as clan_colors
 
@@ -162,15 +163,18 @@ if data["current_link"]:
             st.switch_page("pages/👑 Ventrue.py")
         
         case _:
-           
-           placeholder = st.empty()
+              webbrowser.open_new_tab(data["current_link"])
 
-           with placeholder:
-                open_page(data["current_link"])
-                time.sleep(0.5)
+"""
+placeholder = st.empty()
 
-           placeholder.empty()
-        
+with placeholder:
+        open_page(data["current_link"])
+        time.sleep(0.5)
+
+placeholder.empty()
+"""
+            
         
 with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
     st.markdown("""
