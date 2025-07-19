@@ -1,9 +1,0 @@
-pandas 
-numpy
-webbrowser
-st_bridge
-selenium
-time
-re
-os
-urllib
