@@ -2,7 +2,7 @@ import streamlit as st
 from navigation import make_sidebar
 from streamlit import components
 from st_bridge import bridge
-import webbrowser
+#import webbrowser
 
 import assets.clan_colors as clan_colors
 
@@ -155,7 +155,8 @@ if data["current_link"]:
             st.switch_page("pages/👑 Ventrue.py")
         
         case _:
-            webbrowser.open_new_tab(data["current_link"]) #for 2nd gen and caine, just open their pages in a new tab
+            pass
+           # webbrowser.open_new_tab(data["current_link"]) #for 2nd gen and caine, just open their pages in a new tab
             
 
         
