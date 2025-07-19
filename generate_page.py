@@ -73,16 +73,18 @@ def page_elements(clan_description,
                            
                                     setTimeout(function(){{
                                         target = window.parent.parent.document.getElementById('{iframe_html_id}')
+
+                                        console.log(window.parent.parent.document)
+                                        console.log('{iframe_html_id}')
+                                        if (target) {{
+                                            target.scrollIntoView({{behavior: 'smooth'}});
+                                        }}
+                                        else {{
+                                            console.log("Element not found")
+                                        }}
                                     }}, 2000);
                                     
-                                    console.log(window.parent.parent.document)
-                                    console.log('{iframe_html_id}')
-                                    if (target) {{
-                                        target.scrollIntoView({{behavior: 'smooth'}});
-                                    }}
-                                    else {{
-                                        console.log("Element not found")
-                                    }}
+                                
                                 }}
                         }})
 
