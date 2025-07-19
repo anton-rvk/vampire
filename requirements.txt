@@ -3,7 +3,3 @@ numpy
 st_bridge
 streamlit_javascript
 selenium
-time
-re
-os
-urllib
