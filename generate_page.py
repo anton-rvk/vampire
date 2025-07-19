@@ -72,6 +72,7 @@ def page_elements(clan_description,
                                     window.parent.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
                                     target = window.parent.parent.document.getElementById('{iframe_html_id}')
                                     console.log(window.parent.parent.document)
+                                    console.log('{iframe_html_id}')
                                     if (target) {{
                                         target.scrollIntoView({{behavior: 'smooth'}});
                                     }}
