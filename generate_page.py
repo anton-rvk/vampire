@@ -39,8 +39,6 @@ def page_elements(clan_description,
     with body: 
         with st.container(key="app_title"):
 
-            #st.title(clan_description)
-
             title_format = f"""
                 <h1 align='center' 
                     style='font-family: "Manufacturing Consent", system-ui; font-weight: 500; font-size: 80px; color: {clan_color}; padding: 0px; margin: 0px;'>
@@ -58,8 +56,6 @@ def page_elements(clan_description,
 
         with open("assets/clan_page.css") as f:
             css = f.read()
-
-        #st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
 
         data = bridge("my-bridge", default={"current_link": default_iframe_link})
 

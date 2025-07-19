@@ -3,17 +3,10 @@ from graph import Graph
 import os
 import assets.clan_colors as clan_colors
 
-#g = Graph(clan_data_path="data/Category:Brujah.csv",
-#          graph_path="graphs/brujah.html")
-
-
 clans = ["assamite", "brujah", "caitiff", "gangrel", 
          "hecata", "lasombra", "malkavian", "ministry",
          "nosferatu", "ravnos", "salubri", "toreador",
-         "tremere", "tzimisce", "ventrue"]
-
-
-clans = ["antediluvians"]
+         "tremere", "tzimisce", "ventrue", "antediluvians"]
 
 target_directory = "./data/"
 

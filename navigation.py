@@ -26,9 +26,6 @@ def sort_clans(current_page):
         for file in os.listdir("./pages"):
             clans.append(file[:-3])    
 
-
-        #clans =  ["Brujah", "Ventrue"]
-
         short_clans = []
         for clan in clans: 
             emoji_pattern = re.compile("["
@@ -52,13 +49,10 @@ def sort_clans(current_page):
                 "]+", re.UNICODE)
             short_clans.append(emoji_pattern.sub(r'', clan)[1:]) # no emoji
             
-        #print(np.argsort(short_clans))
 
-        #print(current_page)
         sorted_indices = list(np.argsort(short_clans))
-        if current_page in short_clans:
-            #short_clans.remove(current_page)
-            sorted_indices.remove(short_clans.index(current_page))
+        if current_page in short_clans: 
+            sorted_indices.remove(short_clans.index(current_page)) 
 
         clans = [clans[i] for i in sorted_indices]
 

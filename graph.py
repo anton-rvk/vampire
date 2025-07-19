@@ -79,9 +79,6 @@ class Graph:
         
         gen_str = str(gen_str)
 
-        #gen_str = gen_str.replace("V5", "") #deal with the edge cases where V5 system is mentioned
-        #gen_str = re.sub(r'\[\d+\]', "", gen_str) #deal with source reference (of the type [4])
-
         for rule in custom_rules:
             gen_str = re.sub(rule[0], rule[1], gen_str)
 
@@ -205,11 +202,6 @@ class Graph:
 
         self.network = Network(height="800px", directed=True, bgcolor=self._background_color,  filter_menu=filter_on, cdn_resources='remote')
         self.network.from_nx(self.graph)
-        
-
-        #for edge in edges:
-        #    print(edge)
-        #    self.network.add_edge(edge[0], edge[1], Childer_Of=edge[0], Sire_Of=edge[1])
 
         if generate_html: 
             self.network.write_html(self._graph_path)

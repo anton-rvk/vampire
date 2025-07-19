@@ -2,7 +2,7 @@ import streamlit as st
 from navigation import make_sidebar
 from streamlit import components
 from st_bridge import bridge
-#import webbrowser
+import webbrowser
 
 import assets.clan_colors as clan_colors
 
@@ -155,10 +155,8 @@ if data["current_link"]:
             st.switch_page("pages/👑 Ventrue.py")
         
         case _:
-            pass
-           # webbrowser.open_new_tab(data["current_link"]) #for 2nd gen and caine, just open their pages in a new tab
-            
-
+           webbrowser.open_new_tab(data["current_link"]) #for 2nd gen and caine, just open their pages in a new tab
+        
         
 with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
     st.markdown("""
@@ -174,7 +172,6 @@ with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
 #######
 
 
-#st.sidebar.success("Select a demo above.")
 st.markdown("<style>@import url('https://fonts.googleapis.com/css2?family=Manufacturing+Consent&family=Oswald:wght@200..700&display=swap');</style>", unsafe_allow_html=True)
 
 st.markdown("""<style>
