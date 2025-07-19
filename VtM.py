@@ -3,7 +3,6 @@ from navigation import make_sidebar
 from streamlit import components
 from st_bridge import bridge
 import time 
-import webbrowser
 
 import assets.clan_colors as clan_colors
 
@@ -119,6 +118,7 @@ data = bridge("my-bridge", default={"current_link": None})
 
 wiki_url = "https://whitewolf.fandom.com/wiki/"
 
+placeholder = st.empty()
 
 if data["current_link"]:
     match data["current_link"]: # there is a better way to do this, but too lazy
@@ -163,17 +163,12 @@ if data["current_link"]:
             st.switch_page("pages/👑 Ventrue.py")
         
         case _:
-              webbrowser.open_new_tab(data["current_link"])
 
-"""
-placeholder = st.empty()
+            placeholder.empty()
+            with placeholder:
+                    open_page(data["current_link"])
 
-with placeholder:
-        open_page(data["current_link"])
-        time.sleep(0.5)
-
-placeholder.empty()
-"""
+            
             
         
 with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
