@@ -8,6 +8,7 @@ clans = ["assamite", "brujah", "caitiff", "gangrel",
          "nosferatu", "ravnos", "salubri", "toreador",
          "tremere", "tzimisce", "ventrue", "antediluvians"]
 
+clans = ["antediluvians"]
 target_directory = "./data/"
 
 for filename in os.listdir(target_directory):

@@ -243,7 +243,7 @@ class Graph:
                                 console.log(node)
                                 if (node && node.title) {
                                     //window.open(node.title, "_blank");
-
+                                    console.log(window.parent.parent)
                                     window.parent.parent.postMessage({ type: 'LINK', payload: node.title }, "*")
                                 }
                             }   
