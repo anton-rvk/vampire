@@ -113,8 +113,19 @@ with st.container(border=True, key="graph_container", height = 800):
             components.v1.html(source_code, width = 1500, height = 760, tab_index = 1)
 
 
-data = bridge("my-bridge", default={"current_link": None})
+with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
+    st.markdown("""
+        Interested in learning more? Here are some sources:
+        <ul>
+                <li><a href="https://whitewolf.fandom.com/wiki/Vampire:_The_Masquerade">Unoffical White Wolf Wiki (Lore)</a></li>
+                <li><a href="https://www.schrecknet.live/">Character Creator for Vampire the Masquerade V5</a></li>
+                <li><a href="https://vtm.paradoxwikis.com/VTM_Wiki">Paradox Wiki for VtM V5</a></li>
+        </ul>
+        These resources have been used to construct this application.
+    """, unsafe_allow_html=True)
 
+
+data = bridge("my-bridge", default={"current_link": None})
 
 wiki_url = "https://whitewolf.fandom.com/wiki/"
 
@@ -169,19 +180,6 @@ if data["current_link"]:
                     open_page(data["current_link"])
 
             
-            
-        
-with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
-    st.markdown("""
-        Interested in learning more? Here are some sources:
-        <ul>
-                <li><a href="https://whitewolf.fandom.com/wiki/Vampire:_The_Masquerade">Unoffical White Wolf Wiki (Lore)</a></li>
-                <li><a href="https://www.schrecknet.live/">Character Creator for Vampire the Masquerade V5</a></li>
-                <li><a href="https://vtm.paradoxwikis.com/VTM_Wiki">Paradox Wiki for VtM V5</a></li>
-        </ul>
-        These resources have been used to construct this application.
-    """, unsafe_allow_html=True)
-
 #######
 
 
