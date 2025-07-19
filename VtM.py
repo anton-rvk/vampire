@@ -2,10 +2,17 @@ import streamlit as st
 from navigation import make_sidebar
 from streamlit import components
 from st_bridge import bridge
-import webbrowser
+import time 
 
 import assets.clan_colors as clan_colors
 
+def open_page(url):
+                open_script= """
+                    <script type="text/javascript">
+                        window.open('%s', '_blank').focus();
+                    </script>
+                """ % (url)
+                st.components.v1.html(open_script)
 
 make_sidebar()
 
@@ -155,7 +162,14 @@ if data["current_link"]:
             st.switch_page("pages/👑 Ventrue.py")
         
         case _:
-           webbrowser.open_new_tab(data["current_link"]) #for 2nd gen and caine, just open their pages in a new tab
+           
+           placeholder = st.empty()
+
+           with placeholder:
+                open_page(data["current_link"])
+                time.sleep(0.5)
+
+           placeholder.empty()
         
         
 with st.expander(r"$\textsf{\Large Learn More!}$", expanded=True):
