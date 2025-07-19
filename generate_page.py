@@ -71,7 +71,7 @@ def page_elements(clan_description,
                                     console.log("Event was received")
                                     window.parent.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
                            
-                                    setTimeout(function(){{
+                                    window.onload = function (){{
                                         target = window.parent.parent.document.getElementById('{iframe_html_id}')
 
                                         console.log(window.parent.parent.document)
@@ -82,7 +82,7 @@ def page_elements(clan_description,
                                         else {{
                                             console.log("Element not found")
                                         }}
-                                    }}, 2000);
+                                    }};
                                     
                                 
                                 }}
