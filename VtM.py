@@ -204,7 +204,8 @@ st.markdown("""<style>
 
 components.v1.html(f"""
                     <script>
-
+                        console.log("The parent of the bridge:")
+                        console.log(window.parent)
                         window.parent.addEventListener('message', function handleMessage(event){{
                                 if (event.data && event.data.type == "LINK"){{
                                     window.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
