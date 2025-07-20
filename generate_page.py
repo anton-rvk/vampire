@@ -67,7 +67,7 @@ def page_elements(clan_description,
                     <script>
 
                         function scrollToElement() {{
-                            var target = window.parent.parent.document.getElementById('{iframe_html_id}');
+                            var target = window.document.getElementById('{iframe_html_id}');
                             if (target) {{
                                 target.scrollIntoView({{behavior: 'smooth'}});
                             }} else {{
