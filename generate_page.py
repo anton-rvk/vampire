@@ -66,24 +66,24 @@ def page_elements(clan_description,
         components.v1.html(f"""
                     <script>
 
+                        function scrollToElement() {{
+                            var target = window.parent.parent.document.getElementById('{iframe_html_id}');
+                            if (target) {{
+                                target.scrollIntoView({{behavior: 'smooth'}});
+                            }} else {{
+                                // Retry after 100 milliseconds if the element is not found
+                                setTimeout(scrollToElement, 100);
+                            }}
+                        }}
+                           
+
                         window.parent.parent.addEventListener('message', function handleMessage(event){{
                                 if (event.data && event.data.type == "LINK"){{
                                     console.log("Event was received")
                                     window.parent.parent.stBridges.send("my-bridge", {{ current_link: event.data.payload }});
                            
-                                    window.parent.parent.onload = function (){{
-                                        target = window.parent.parent.document.getElementById('{iframe_html_id}')
-
-                                        console.log(window.parent.parent.document)
-                                        console.log('{iframe_html_id}')
-                                        if (target) {{
-                                            target.scrollIntoView({{behavior: 'smooth'}});
-                                        }}
-                                        else {{
-                                            console.log("Element not found")
-                                        }}
-                                    }};
-                                    
+                                    scrollToElement();
+                                
                                 
                                 }}
                         }})
