@@ -73,6 +73,7 @@ def page_elements(clan_description,
                             }} else {{
                                 // Retry after 100 milliseconds if the element is not found
                                 setTimeout(scrollToElement, 100);
+                                console.log("TRY AGAIN")
                             }}
                         }}
                            
